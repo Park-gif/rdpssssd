@@ -1,0 +1,24 @@
+name: RDP Windows 12 Jam
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 720  # 12 jam
+    steps:
+      - name: Enable RDP
+        run: |
+          net user runneradmin yourpassword123 /add
+          net localgroup administrators runneradmin /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          echo "RDP Enabled"
+
+      - name: Start 12 Hour RDP
+        run: |
+          Invoke-WebRequest "https://download.sysinternals.com/files/PSTools.zip" -OutFile "PSTools.zip"
+          Expand-Archive PSTools.zip -DestinationPath .
+          ./PsExec.exe -accepteula -s cmd /c "echo RDP Started"
+          Start-Sleep -Seconds 43200  # 12 jam
