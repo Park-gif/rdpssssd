@@ -1,40 +1,56 @@
-name: RDP with Ngrok - 12 Jam Akses + Akses Web Port 3000
+name: RDP + MongoDB + Web + Ngrok (12 Jam)
 
 on:
   workflow_dispatch:
 
 jobs:
-  rdp:
+  setup-rdp:
     runs-on: windows-latest
-    timeout-minutes: 720
+    timeout-minutes: 2800
     steps:
-      - name: Set password akun runneradmin
+
+      - name: Set password akun RDP
         run: |
           net user runneradmin MyRdpPass123
 
-      - name: Aktifkan RDP dan buka firewall
+      - name: Aktifkan RDP dan buka firewall RDP
         run: |
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: Download & Jalankan Ngrok (RDP dan Web Port 3000)
+      - name: Install MongoDB
+        run: |
+          choco install mongodb --version=6.0.5 -y
+          sc config MongoDB start= auto
+          net start MongoDB
+          mkdir C:\data\db
+
+      - name: Buka firewall port MongoDB (27017), Backend (5000), Frontend (3000)
+        run: |
+          New-NetFirewallRule -DisplayName "MongoDB Port" -Direction Inbound -LocalPort 27017 -Protocol TCP -Action Allow
+          New-NetFirewallRule -DisplayName "Backend API Port" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow
+          New-NetFirewallRule -DisplayName "Frontend Web Port" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+
+      - name: Download & setup Ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip -DestinationPath .
           .\ngrok.exe config add-authtoken 2dHpUQv2XsW8Se0LHY2WH31LwtH_4kiGSnvEnRUnuz7EZQL3A
 
-          # Jalankan tunnel untuk RDP
+      - name: Jalankan Ngrok untuk semua port (RDP, MongoDB, Backend, Frontend)
+        run: |
           Start-Process .\ngrok.exe "tcp 3389"
-
-          # Jalankan tunnel untuk web kamu di port 3000
+          Start-Process .\ngrok.exe "tcp 27017"
+          Start-Process .\ngrok.exe "http 5000"
           Start-Process .\ngrok.exe "http 3000"
-
-          Write-Host "Tunggu 20 detik agar tunnel aktif..."
-          Start-Sleep -Seconds 20
-          
+          Start-Sleep -Seconds 15
           curl http://127.0.0.1:4040/api/tunnels
 
-      - name: Tahan sesi selama 12 jam
+      - name: Informasi RDP & Tahan 12 Jam
         run: |
-          Write-Host "✅ RDP dan Web Port 3000 sekarang aktif dan publik!"
-          Start-Sleep -Seconds 43200
+          Write-Host "✅ RDP Siap. Password: MyRdpPass123"
+          Write-Host "✅ MongoDB Port: 27017 via Ngrok"
+          Write-Host "✅ Backend (API): http://localhost:5000"
+          Write-Host "✅ Frontend (Web): http://localhost:3000"
+          Write-Host "Lihat URL publik di log sebelumnya (Ngrok)"
+          Start-Sleep -Seconds 172800
