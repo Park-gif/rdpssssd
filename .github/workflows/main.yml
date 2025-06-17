@@ -8,17 +8,22 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 720  # 12 jam
     steps:
-      - name: Enable RDP
+      - name: Aktifkan RDP & Firewall
         run: |
-          net user runneradmin yourpassword123 /add
-          net localgroup administrators runneradmin /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          echo "RDP Enabled"
+          echo "✅ RDP Telah Diaktifkan!"
 
-      - name: Start 12 Hour RDP
+      - name: Tampilkan Info Login
         run: |
-          Invoke-WebRequest "https://download.sysinternals.com/files/PSTools.zip" -OutFile "PSTools.zip"
-          Expand-Archive PSTools.zip -DestinationPath .
-          ./PsExec.exe -accepteula -s cmd /c "echo RDP Started"
+          whoami
+          hostname
+          ipconfig
+          echo "📌 Username: runneradmin"
+          echo "📌 Password default GitHub Actions tidak bisa diubah"
+          echo "Silakan connect ke IP Public dari log menggunakan Remote Desktop (mstsc)"
+          echo "📢 Catatan: RDP akan mati otomatis setelah 12 jam."
+
+      - name: Tahan Selama 12 Jam
+        run: |
           Start-Sleep -Seconds 43200  # 12 jam
