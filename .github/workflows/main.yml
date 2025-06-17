@@ -1,4 +1,4 @@
-name: RDP with Ngrok (12 jam)
+name: RDP with Ngrok - 12 Jam Akses
 
 on:
   workflow_dispatch:
@@ -6,23 +6,28 @@ on:
 jobs:
   rdp:
     runs-on: windows-latest
-    timeout-minutes: 720  # 12 jam
+    timeout-minutes: 720
     steps:
-      - name: Set user password
+      - name: Set password akun runneradmin
         run: |
           net user runneradmin MyRdpPass123
-          echo "Password runneradmin diubah"
 
-      - name: Aktifkan RDP dan Firewall
+      - name: Aktifkan RDP dan buka firewall
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: Download & Start Ngrok (for RDP)
+      - name: Download & Jalankan Ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip -DestinationPath .
-          .\ngrok\ngrok.exe config add-authtoken 2dHpUQv2XsW8Se0LHY2WH31LwtH_4kiGSnvEnRUnuz7EZQL3A
-          Start-Process .\ngrok\ngrok.exe "tcp 3389"
-          echo "Ngrok started on port 3389"
+          .\ngrok.exe config add-authtoken 2dHpUQv2XsW8Se0LHY2WH31LwtH_4kiGSnvEnRUnuz7EZQL3A
+          Start-Process .\ngrok.exe "tcp 3389"
+          Write-Host "Tunggu beberapa detik agar tunnel aktif..."
+          Start-Sleep -Seconds 20
+          curl http://127.0.0.1:4040/api/tunnels
+
+      - name: Tahan sesi selama 12 jam
+        run: |
+          Write-Host "Sesi RDP aktif. Gunakan informasi dari log Ngrok di atas untuk login."
           Start-Sleep -Seconds 43200
