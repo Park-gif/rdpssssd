@@ -1,29 +1,28 @@
-name: RDP Windows 12 Jam
+name: RDP with Ngrok (12 jam)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  rdp:
     runs-on: windows-latest
     timeout-minutes: 720  # 12 jam
     steps:
-      - name: Aktifkan RDP & Firewall
+      - name: Set user password
+        run: |
+          net user runneradmin MyRdpPass123
+          echo "Password runneradmin diubah"
+
+      - name: Aktifkan RDP dan Firewall
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          echo "✅ RDP Telah Diaktifkan!"
 
-      - name: Tampilkan Info Login
+      - name: Download & Start Ngrok (for RDP)
         run: |
-          whoami
-          hostname
-          ipconfig
-          echo "📌 Username: runneradmin"
-          echo "📌 Password default GitHub Actions tidak bisa diubah"
-          echo "Silakan connect ke IP Public dari log menggunakan Remote Desktop (mstsc)"
-          echo "📢 Catatan: RDP akan mati otomatis setelah 12 jam."
-
-      - name: Tahan Selama 12 Jam
-        run: |
-          Start-Sleep -Seconds 43200  # 12 jam
+          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip -DestinationPath .
+          .\ngrok\ngrok.exe config add-authtoken 2dHpUQv2XsW8Se0LHY2WH31LwtH_4kiGSnvEnRUnuz7EZQL3A
+          Start-Process .\ngrok\ngrok.exe "tcp 3389"
+          echo "Ngrok started on port 3389"
+          Start-Sleep -Seconds 43200
