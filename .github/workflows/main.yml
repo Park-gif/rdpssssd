@@ -1,4 +1,4 @@
-name: RDP with Ngrok - 12 Jam Akses
+name: RDP with Ngrok - 12 Jam Akses + Akses Web Port 3000
 
 on:
   workflow_dispatch:
@@ -17,17 +17,24 @@ jobs:
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: Download & Jalankan Ngrok
+      - name: Download & Jalankan Ngrok (RDP dan Web Port 3000)
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip -DestinationPath .
           .\ngrok.exe config add-authtoken 2dHpUQv2XsW8Se0LHY2WH31LwtH_4kiGSnvEnRUnuz7EZQL3A
+
+          # Jalankan tunnel untuk RDP
           Start-Process .\ngrok.exe "tcp 3389"
-          Write-Host "Tunggu beberapa detik agar tunnel aktif..."
+
+          # Jalankan tunnel untuk web kamu di port 3000
+          Start-Process .\ngrok.exe "http 3000"
+
+          Write-Host "Tunggu 20 detik agar tunnel aktif..."
           Start-Sleep -Seconds 20
+          
           curl http://127.0.0.1:4040/api/tunnels
 
       - name: Tahan sesi selama 12 jam
         run: |
-          Write-Host "Sesi RDP aktif. Gunakan informasi dari log Ngrok di atas untuk login."
+          Write-Host "✅ RDP dan Web Port 3000 sekarang aktif dan publik!"
           Start-Sleep -Seconds 43200
